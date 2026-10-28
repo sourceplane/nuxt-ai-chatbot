@@ -1,0 +1,23 @@
+{
+  "cloudflare-d1/dev": {
+    "d1_database_id": "00000000-0000-0000-0000-000000000002",
+    "d1_database_name": "dev-nuxt-ai-chatbot-dev"
+  },
+  "cloudflare-d1/stage": {
+    "d1_database_id": "00000000-0000-0000-0000-000000000001",
+    "d1_database_name": "stg-nuxt-ai-chatbot-stage"
+  },
+  "cloudflare-d1/prod": {
+    "d1_database_id": "00000000-0000-0000-0000-000000000003",
+    "d1_database_name": "prod-nuxt-ai-chatbot-prod"
+  },
+  "cloudflare-r2/dev": {
+    "r2_bucket_name": "dev-nuxt-ai-chatbot-dev"
+  },
+  "cloudflare-r2/stage": {
+    "r2_bucket_name": "stg-nuxt-ai-chatbot-stage"
+  },
+  "cloudflare-r2/prod": {
+    "r2_bucket_name": "prod-nuxt-ai-chatbot-prod"
+  }
+}

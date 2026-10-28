@@ -1,0 +1,141 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: web
+  description: The chat (the Nuxt UI chat template on Cloudflare Workers + Static Assets through Nitro's cloudflare_module preset, with D1, R2 and Workers AI, per environment)
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: production
+  owner: platform
+  # Its pages, attached to it in the workspace's catalog: what the Docs
+  # library shows for it, and what the catalog's docs and runbook checks read.
+  # Generated from what this manifest and its sources declare.
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture, title: Architecture }
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  # `app`, not `web`: a domain and a component share one name space in the
+  # catalog, and a domain called `web` hid this component from it.
+  domain: app
+  path: apps/web
+  # Its own lane per environment: the Nuxt build is the longest job in the
+  # plan, and a shared lane would wait on it.
+  lane: isolated
+  # INFRA BEFORE APP. The Worker binds the D1 database by id and the R2 bucket
+  # by name, both rendered into its config during the build from the wiring
+  # documents the cloudflare-d1 and cloudflare-r2 roots lease-publish after
+  # their applies; and the chat reads the schema (and its generated session
+  # key) db-migrate creates in that database. A job resolves its secrets when it
+  # STARTS, so on a merge to main this deploy waits for all three (enforced) —
+  # one convergence runs cloudflare-d1 → db-migrate and cloudflare-r2, then
+  # web, per environment. A pull request deploys nothing, so nothing on one
+  # waits (advisory).
+  dependsOn:
+    - component: cloudflare-d1
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+    - component: cloudflare-r2
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+    - component: db-migrate
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  # WHAT ITS OWNER CONNECTS AFTER THE BUILD, as the product's own Orun
+  # secrets on each environment (README → Signing in with GitHub, The AI
+  # Gateway's models): a GitHub OAuth app's id and secret, the AI Gateway's
+  # key, and a session password to replace the generated one. Optional: the
+  # chat is built, deployed and chatting on Workers AI without any of them.
+  # Each is read by the Worker at request time, so the build runs without
+  # them (`env -u` below) and they reach the Worker as secrets.
+  optionalSecretEnv:
+    NUXT_OAUTH_GITHUB_CLIENT_ID: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/{{ .environment }}/NUXT_OAUTH_GITHUB_CLIENT_ID"
+    NUXT_OAUTH_GITHUB_CLIENT_SECRET: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/{{ .environment }}/NUXT_OAUTH_GITHUB_CLIENT_SECRET"
+    AI_GATEWAY_API_KEY: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/{{ .environment }}/AI_GATEWAY_API_KEY"
+    NUXT_SESSION_PASSWORD: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/{{ .environment }}/NUXT_SESSION_PASSWORD"
+  secretEnv:
+    WIRING_CLOUDFLARE_D1_STAGE: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/stage/WIRING_CLOUDFLARE_D1"
+    WIRING_CLOUDFLARE_D1_PROD: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/prod/WIRING_CLOUDFLARE_D1"
+    WIRING_CLOUDFLARE_R2_STAGE: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/stage/WIRING_CLOUDFLARE_R2"
+    WIRING_CLOUDFLARE_R2_PROD: "secret://nuxt-ai-chatbot/nuxt-ai-chatbot/prod/WIRING_CLOUDFLARE_R2"
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@app/web"
+    wranglerConfig: wrangler.jsonc
+
+    # Nitro's cloudflare_module preset emits the Worker under .output/server
+    # and the static assets under .output/public — both deploy in one
+    # `wrangler deploy`.
+    workerEntrypoint: .output/server/index.mjs
+    assetsDir: .output/public
+
+    # Per-env worker name: nuxt-ai-chatbot-web-{dev,stage,prod}.
+    workerName: nuxt-ai-chatbot-web
+    environmentAwareWorkerName: true
+
+    # The account's workers.dev subdomain; exported to the smoke step as
+    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}.
+    workersDevSubdomain: your-workers-subdomain
+
+    installCommand: pnpm install --frozen-lockfile
+    # Render this environment's wrangler config, then build. stage and prod
+    # render from the wiring documents their cloudflare-d1 and cloudflare-r2
+    # applies published (secretEnv above, resolved before the job's first
+    # step); dev, which no root applies to and which only verifies, renders
+    # from the committed fixture. The committed wrangler.jsonc (the fixture
+    # render) is what the composition's verify-app-structure step finds before
+    # this runs. The build takes no origin: the chat renders no absolute
+    # link of its own, and GitHub sign-in builds its callback from each
+    # request. It runs without the optional secrets (`env -u`), so no bundle
+    # and no build cache can hold one; then those the environment has go to
+    # the Worker as SECRETS (tooling/wire/worker-secrets.mjs: `wrangler
+    # secret bulk`, the values over stdin) before the composition deploys it.
+    # Only the deploy lane holds a Cloudflare credential, so a verify lane
+    # builds the same and pushes nothing. ${ORUN_ENVIRONMENT} the runner sets
+    # for every step.
+    buildCommand: node ../../tooling/wire/live.mjs --template wrangler.template.jsonc --out wrangler.jsonc --components cloudflare-d1,cloudflare-r2 --env "${ORUN_ENVIRONMENT}" --fixture wiring.fixture.json --fixture-envs dev && env -u NUXT_OAUTH_GITHUB_CLIENT_ID -u NUXT_OAUTH_GITHUB_CLIENT_SECRET -u AI_GATEWAY_API_KEY -u NUXT_SESSION_PASSWORD pnpm exec turbo run build --filter=@app/web && node ../../tooling/wire/worker-secrets.mjs --worker "nuxt-ai-chatbot-web-${ORUN_ENVIRONMENT}" --config wrangler.jsonc --secret NUXT_OAUTH_GITHUB_CLIENT_ID --secret NUXT_OAUTH_GITHUB_CLIENT_SECRET --secret AI_GATEWAY_API_KEY --secret NUXT_SESSION_PASSWORD
+
+    # Smoke: the home page renders (its Nuxt root — and every Worker
+    # request first reads the session key the migrations generated in D1, so
+    # it answers only once the database is migrated), the chat list answers
+    # from D1 (`/api/chats`, a fresh visitor's empty list — it queries the
+    # chats table the migrations created), and the model picker offers
+    # Workers AI's models (`/api/capabilities`). Read-only: a smoke on every
+    # deploy must not write into prod, and no model is called. Each response
+    # is buffered before grep so an early match cannot SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q 'id=\"__nuxt\"' && chats=$(curl -sf \"${DEPLOYED_URL}/api/chats\") && echo \"${chats}\" | grep -q '^\\[' && caps=$(curl -sf \"${DEPLOYED_URL}/api/capabilities\") && echo \"${caps}\" | grep -q '\"workers-ai\"'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: web
+    runtime: cloudflare

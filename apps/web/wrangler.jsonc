@@ -1,0 +1,50 @@
+// GENERATED from wrangler.template.jsonc by tooling/wire — edit the
+// template, not this file. The committed copy is the fixture render
+// (`pnpm run wire:fixture`); every Orun lane renders its own environment.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nuxt-ai-chatbot-web",
+  // Nitro's cloudflare_module output: the Worker, and the static assets it
+  // serves beside it.
+  "main": "./.output/server/index.mjs",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": "./.output/public",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // The chats, their messages, the users and the votes — Cloudflare D1
+  // (NuxtHub's `d1` driver, `hub:db`) in place of Turso. The schema is
+  // packages/db's migrations, applied before the Worker deploys.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "stg-nuxt-ai-chatbot-stage",
+      "database_id": "00000000-0000-0000-0000-000000000001"
+    }
+  ],
+  // The uploads — an R2 bucket (NuxtHub's `cloudflare-r2` driver, `hub:blob`)
+  // in place of Vercel Blob, served back at /api/files/<pathname>.
+  "r2_buckets": [
+    {
+      "binding": "BLOB",
+      "bucket_name": "stg-nuxt-ai-chatbot-stage"
+    }
+  ],
+  // The model provider. Workers AI through this binding is the default for
+  // the chat and the titles (server/utils/models.ts): it needs no key — the
+  // Worker's own account runs the models. Workers AI has no local mode, so
+  // `wrangler dev` and `nuxt dev` reach it remotely (`wrangler login` first).
+  "ai": {
+    "binding": "AI"
+  }
+  // NUXT_SESSION_PASSWORD, NUXT_OAUTH_GITHUB_CLIENT_ID,
+  // NUXT_OAUTH_GITHUB_CLIENT_SECRET and AI_GATEWAY_API_KEY are optional
+  // Worker SECRETS, never vars: the product's Orun secrets of the same names,
+  // which the deploy sets on the Worker (component.yaml, README). Without the
+  // first, the session key is the one the database generated
+  // (server/utils/app-secrets.ts); without the GitHub pair the chat works
+  // without sign-in; without the gateway key only Workers AI's models are
+  // offered and dictation is off.
+}
