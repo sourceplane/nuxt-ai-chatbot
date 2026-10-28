@@ -9,7 +9,7 @@ metadata:
 spec:
   title: "Vercel's Nuxt AI Chatbot on Cloudflare Workers, D1, R2 and Workers AI"
   summary: "The Nuxt UI chat template — streaming AI chat with reasoning, chart and weather tools, chat history, file uploads and GitHub sign-in — run as one Nuxt app on Cloudflare Workers + Static Assets through Nitro's cloudflare_module preset, its models on Workers AI through the Worker's own binding (the AI Gateway's once its key is set), its chats in Cloudflare D1 and its uploads in R2 through NuxtHub's drivers, both provisioned by Terraform, the schema applied by db-migrate, the session key generated in the database; and become an Orun baseline that takes a new chat from nothing to live on stage and prod in one landing."
-  state: started
+  state: completed
   milestones:
     - name: "NC0 — the spec"
       exitCriteria:

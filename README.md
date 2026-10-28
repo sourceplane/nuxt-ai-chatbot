@@ -8,9 +8,9 @@ Static Assets** through Nitro's `cloudflare_module` preset, with its models on
 **Workers AI** through the Worker's own binding, its chats in a **Cloudflare
 D1** database and its uploads in an **R2** bucket, both provisioned by
 Terraform through [Orun](https://github.com/sourceplane/orun) and the schema
-applied by migrations, deployed by
-[Orun](https://github.com/sourceplane/orun) to stage and prod on every merge.
-Packaging it as an Orun baseline is the next milestone (NC2). Workers Free is enough: the Worker is
+applied by migrations, and packaged as an **Orun baseline**: one command takes
+a new chat from nothing to live on stage and prod, in its own repository,
+under its own name — in ONE landing. Workers Free is enough: the Worker is
 about 1.2 MiB gzipped.
 
 The template's code is the code. NuxtHub keeps its `hub:db` and `hub:blob`
@@ -21,9 +21,49 @@ model key (the template's own AI Gateway models appear once its key is set,
 as in [ai-chatbot](https://github.com/sourceplane/ai-chatbot)); the schema is
 migrations applied before the Worker deploys; the session key is generated in
 the database; uploads are served back by the Worker; and GitHub sign-in waits,
-visibly, for its owner to connect it. See
+visibly, for its owner to connect it. What the baseline adds is everything
+needed to make a copy of it somebody else's, built the way
+[turso-starter](https://github.com/sourceplane/turso-starter) is. See
 [`specs/epics/nuxt-ai-chatbot`](specs/epics/nuxt-ai-chatbot/README.md) for the
 design, the milestones and the as-built status.
+
+## Instantiating a product
+
+```bash
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/nuxt-ai-chatbot
+cd nuxt-ai-chatbot
+orun new --blueprint repo-blueprint.yaml --out ~/sites/acme-chat --run-hooks --resume \
+  --set reponame=acme-chat --set productname="Acme Chat" \
+  --set githuborg=acme-inc --set subdomain=<workers-dev-subdomain>
+```
+
+Or, once the platform's registry lists it, from the Orun console (Baselines →
+`nuxt-ai-chatbot` → Build). Two phases: **`01-product`** creates the
+repository and lands the whole product as ONE pull request — intent, CI,
+tooling, the D1 and R2 roots, the migrations, the chat and its tests — and
+one convergence, per environment, applies the database and the bucket, then
+the migrations, then deploys the chat with their names; **`02-docs`** records
+the live deployment from probed facts. **[BOOTSTRAP.md](BOOTSTRAP.md)** is the
+operator guide; [docs/phases/](docs/phases/README.md) has a page per phase.
+
+The new repository receives the **product only** — the app, its D1 and R2
+roots, its migrations and their runner, its tests, its CI, its tooling, a
+README of its own and its operating contract — renamed throughout to the
+product's name, repository, Cloudflare Worker, database and bucket names.
+None of this repository's machinery ships. **No AI vendor key is asked for**:
+the platform brokers none, and the chat runs on Workers AI.
+
+| What makes it a baseline | Where |
+|---|---|
+| The console card (inputs, secrets, programme) | `blueprint.yaml` |
+| The build document (modules, phases, hooks) | `repo-blueprint.yaml` |
+| This tree's identity, and the bootstrap's task contracts | `.baseline/` |
+| The rename engine | `tooling/rebrand/rebrand.mjs` |
+| The bootstrap's helpers (deferrals, redeploy marker, work-tree strip) | `tooling/bootstrap/` |
+| The deployment-record renderer | `hooks/render-deployment-docs.sh` |
+| The product's README and context pack | `.baseline/product/README.md`, `ai/context/` |
+| The baseline's tests: contract, wiring, leak, offline bootstrap, end to end | `testing/`, `.github/workflows/baseline.yml` |
+| Cutting a `baseline-vN` tag | `.github/workflows/tag.yml` |
 
 ## What is here (the product)
 
@@ -103,3 +143,5 @@ if the two disagree.
 | Workflow | What it runs | Ships to a product |
 |---|---|---|
 | `ci.yml` | the Orun pipeline, and the only workflow a product carries: `orun plan --changed`, then one job per lane. A pull request runs the verify lanes (packages type-checked, linted, tested and built, both test suites, the chat built and dry-deployed per environment), except the bootstrap's own landings (`orun/BASE-*`), where `plan` alone is the check; a merge applies the D1 database and the R2 bucket, migrates the database, then deploys stage → prod. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does. A manual run (Orunbase's Deploy button, or Run workflow on `main`) plans the environment and components it names under the push-to-main trigger, so they deploy as a merge deploys them | yes |
+| `baseline.yml` | the baseline's own tiers: contract tests, the wiring path, the blueprint read by the pinned orun, the leak gate, the offline bootstrap with the product's own plan, the product built in the job tree, migrated, dry-deployed and served — a chat answered through a Workers AI stand-in, an upload written to R2 and back, the owner's secrets connected | no |
+| `tag.yml` | cuts a `baseline-vN` tag (manual) | no |
