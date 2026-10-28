@@ -4,7 +4,7 @@
 |---|---|---|
 | NC0 — the spec | ✅ | NC-1 |
 | NC1 — the chat on Workers, D1 and R2 | ✅ | NC-2 |
-| NC2 — a baseline | planned | NC-3 |
+| NC2 — a baseline | ✅ | NC-3, tagged `baseline-v1` |
 
 ## Departures from the upstream template
 

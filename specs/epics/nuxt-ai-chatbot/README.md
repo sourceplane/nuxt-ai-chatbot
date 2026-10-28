@@ -9,7 +9,7 @@ baseline that makes a copy of it somebody else's chat in one landing.**
 
 | | |
 |---|---|
-| Status | In progress — NC1 on main: the site runs on Workers |
+| Status | ✅ Shipped (`baseline-v1`) — proven offline in Baseline CI; not yet live (risk NC-A) |
 | Upstream | [nuxt-ui-templates/chat](https://github.com/nuxt-ui-templates/chat) (MIT), `main` at `3891852` (the repository has no tags) |
 | Reference | [ai-chatbot](https://github.com/sourceplane/ai-chatbot) — Workers AI by default, the gateway's models with its key, the Workers AI stand-in; [turso-starter](https://github.com/sourceplane/turso-starter) — D1, migrations, db-migrate; [blob-starter](https://github.com/sourceplane/blob-starter) — R2; [nuxt-boilerplate](https://github.com/sourceplane/nuxt-boilerplate) — Nitro's Workers preset |
 | Key | `NC` |
