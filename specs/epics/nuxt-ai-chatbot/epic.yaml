@@ -1,0 +1,30 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (NC → NC-1, NC-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: nuxt-ai-chatbot
+  key: NC
+spec:
+  title: "Vercel's Nuxt AI Chatbot on Cloudflare Workers, D1, R2 and Workers AI"
+  summary: "The Nuxt UI chat template — streaming AI chat with reasoning, chart and weather tools, chat history, file uploads and GitHub sign-in — run as one Nuxt app on Cloudflare Workers + Static Assets through Nitro's cloudflare_module preset, its models on Workers AI through the Worker's own binding (the AI Gateway's once its key is set), its chats in Cloudflare D1 and its uploads in R2 through NuxtHub's drivers, both provisioned by Terraform, the schema applied by db-migrate, the session key generated in the database; and become an Orun baseline that takes a new chat from nothing to live on stage and prod in one landing."
+  state: started
+  milestones:
+    - name: "NC0 — the spec"
+      exitCriteria:
+        - "the repository is born with its intent, CI, tooling and spec index, and this doc set and the task contracts are on main"
+      tasks: [NC-1]
+    - name: "NC1 — the chat on Workers, D1 and R2"
+      exitCriteria:
+        - "apps/web is the template with NuxtHub's d1 and cloudflare-r2 drivers, built by Nitro into one Worker, its models on Workers AI through the AI binding"
+        - "the chat's schema and the session key are packages/db migrations, applied by db-migrate; the D1 and R2 roots provision stage and prod"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green"
+        - "`wrangler dev` serves the chat on a migrated local D1: a chat answered through a Workers AI stand-in, titled and persisted, an upload written to R2 and served back"
+      tasks: [NC-2]
+    - name: "NC2 — a baseline"
+      exitCriteria:
+        - "blueprint.yaml (the console card) and repo-blueprint.yaml (the build) take a new chat from nothing to live on stage and prod in one landing, then record it"
+        - "a chat built from it carries the chat only, renamed throughout to its own name, repository, Worker, database and bucket"
+        - "Baseline CI is green: contract tests, the wiring path, generated component docs, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the end-to-end tier"
+      tasks: [NC-3]
