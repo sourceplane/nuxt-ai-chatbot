@@ -1,0 +1,22 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: NC-2
+  title: "The chat on Workers, D1 and R2"
+spec:
+  goal: The Nuxt UI chat runs on Cloudflare Workers + Static Assets with its models on Workers AI, its chats in D1 and its uploads in R2, its schema as migrations applied by db-migrate, its D1 and R2 roots provisioning stage and prod
+  affects:
+    - apps/web
+    - packages/db
+    - infra
+    - tests
+    - tooling/migrations
+    - tooling/wire
+    - pnpm-lock.yaml
+    - pnpm-workspace.yaml
+    - README.md
+    - .gitignore
+  doneWhen:
+    - pnpm typecheck, lint, test and build are green
+    - wrangler dev serves the chat on a migrated local D1, a chat is answered through a Workers AI stand-in and persisted, and an upload is written to R2 and served back
+  gates: []
