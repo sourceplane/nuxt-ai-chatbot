@@ -11,3 +11,8 @@ packages:
 onlyBuiltDependencies:
   - esbuild
   - workerd
+
+overrides:
+  # The template's own pin: h3 v1, because nuxt-csurf still uses the v1 event
+  # API (event.req.headers.get) and breaks on h3 v2.
+  h3: 1.15.11
