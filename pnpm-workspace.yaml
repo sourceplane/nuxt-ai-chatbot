@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tests/*"
+  - "tooling/*"
+
+# pnpm 10 blocks dependency build scripts unless allow-listed; wrangler's
+# workerd and esbuild need theirs to verify their platform binaries. The
+# template's other native helpers (@parcel/watcher, unrs-resolver, vue-demi)
+# stay unbuilt, as upstream allows them no build either.
+onlyBuiltDependencies:
+  - esbuild
+  - workerd

@@ -1,0 +1,37 @@
+node_modules/
+dist/
+.output/
+.nuxt/
+.nitro/
+.cache/
+.wrangler/
+.turbo/
+coverage/
+*.tsbuildinfo
+.env
+.env.local
+.env*.local
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+*.log
+plan.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+.workspace/
+
+# orun per-job staged workspaces and object-model caches.
+**/.orun/runs/
+**/.orun/
+
+# apps/web/wrangler.jsonc is NOT ignored: it is committed as the fixture render
+# of wrangler.template.jsonc, because the deploy lane checks the config exists
+# before it builds (and re-renders it for its environment in the build).
+
+# NuxtHub's local directory (`nuxt dev`'s blob and database stand-ins; the
+# deployed site uses R2 and D1), and drizzle-kit's scratch output.
+apps/web/.data/
