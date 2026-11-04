@@ -83,6 +83,31 @@ spec:
           - profile: deploy
             when:
               triggerRef: github-push-main
+  # How the site runs itself for orun.work's live Preview tab
+  # (saas-parallel-baselining PB4): `orun preview` starts this, and a coding
+  # session keeps it running while it works, so the person watches it change
+  # as it is built. The dev server binds the box's loopback only, on a fixed
+  # port, and installs first, so a checkout the session has not installed yet
+  # still comes up.
+  # --strictPort makes nuxt dev exit rather than move to another port when
+  # 3000 is taken. Nuxt answers on the port at once with its loading page,
+  # which reloads itself into the site once the first build is done; the hot
+  # reload socket is Vite's, on the same port (/_nuxt/).
+  # Workers AI has no local mode, so without Cloudflare credentials wrangler's
+  # platform proxy does not start and Nitro's dev emulation runs with no
+  # bindings (no DB, BLOB or AI): the chat page renders, but history, uploads
+  # and replies need a deployment. A 1 GiB heap: at 512 MiB nuxt dev ran out of
+  # memory rebuilding the server after an edit.
+  preview:
+    run:
+      - sh
+      - -c
+      - pnpm install --frozen-lockfile --prefer-offline --filter "@app/web..." && exec node_modules/.bin/nuxt dev --host 127.0.0.1 --port 3000 --strictPort
+    port: 3000
+    path: /
+    env:
+      NODE_OPTIONS: --max-old-space-size=1024
+      NUXT_TELEMETRY_DISABLED: "1"
   parameters:
     nodeVersion: "22"
     pnpmVersion: "10.12.1"
